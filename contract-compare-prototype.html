@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合同起草 - 智能比对原型</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;
+    font-size:13px; color:#1f2329; background:#f2f3f5; overflow:hidden;
+  }
+  :root {
+    --blue:#3d6dfc; --blue-hover:#2b5ce0; --blue-disabled:#a9c3fb; --blue-bg:#eaf1ff;
+    --text:#1f2329; --text-2:#646a73; --text-3:#8f959e;
+    --border:#dee0e3; --border-2:#e7e9eb;
+    --thead:#f7f8fa; --card:#f7f8fa;
+    --green:#00a854; --red:#f54a45;
+  }
+  svg { display:block; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:#c9cdd4; border-radius:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+
+  /* ============ 顶部导航 ============ */
+  .topnav { height:42px; background:#fff; border-bottom:1px solid var(--border-2); display:flex; align-items:center; padding:0 14px; gap:4px; flex:none; }
+  .logo { display:flex; align-items:center; gap:7px; color:var(--blue); font-weight:700; font-size:14px; margin-right:14px; font-style:italic; }
+  .nav-item { padding:0 12px; height:42px; display:flex; align-items:center; color:#4e5560; cursor:pointer; font-size:13px; }
+  .nav-item:hover { color:var(--blue); }
+  .nav-item.active { background:var(--blue); color:#fff; }
+  .nav-sep { width:1px; height:16px; background:var(--border); margin:0 6px; }
+  .nav-right { margin-left:auto; display:flex; align-items:center; gap:14px; color:#666; }
+  .nav-ico { cursor:pointer; color:#666; display:flex; }
+  .nav-ico:hover { color:var(--blue); }
+  .btn-ghost-blue { color:var(--blue); border:1px solid var(--blue); background:#eef4ff; padding:3px 10px; border-radius:3px; font-size:12px; cursor:pointer; }
+  .avatar { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,#5b8cff,#2b5ce0); color:#fff; font-size:12px; display:flex; align-items:center; justify-content:center; }
+
+  /* ============ 主体布局 ============ */
+  .shell { display:flex; height:calc(100% - 42px); }
+  .rail { width:42px; background:#24272e; flex:none; display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:18px; }
+  .rail-ico { color:#9aa0a8; cursor:pointer; display:flex; }
+  .rail-ico:hover { color:#fff; }
+  .rail .sp { flex:1; }
+  .main { flex:1; display:flex; flex-direction:column; min-width:0; }
+
+  .tabbar { height:36px; background:#fff; border-bottom:1px solid var(--border-2); display:flex; align-items:center; padding:0 12px; gap:10px; flex:none; }
+  .crumb { display:flex; align-items:center; gap:6px; color:#555; cursor:pointer; }
+  .crumb:hover { color:var(--blue); }
+  .tab-active { color:var(--blue); background:var(--blue-bg); border:1px solid #b9d0ff; padding:3px 14px; border-radius:3px; font-size:12px; }
+
+  .page-head { padding:10px 16px 4px; display:flex; align-items:center; gap:10px; flex:none; }
+  .doc-title { font-size:16px; font-weight:700; }
+  .tag { font-size:11px; color:var(--blue); background:var(--blue-bg); border:1px solid #b9d0ff; padding:1px 7px; border-radius:2px; }
+
+  .action-bar { display:flex; gap:8px; padding:8px 16px 10px; flex-wrap:wrap; flex:none; position:relative; }
+  .abtn { background:var(--blue); color:#fff; border:none; height:28px; padding:0 13px; border-radius:3px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .abtn:hover { background:var(--blue-hover); }
+  .caret { width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid #fff; opacity:.9; }
+  .dd-wrap { position:relative; display:inline-block; }
+  .menu { position:absolute; top:32px; left:0; background:#fff; border:1px solid var(--border-2); box-shadow:0 4px 14px rgba(31,35,41,.14); border-radius:4px; min-width:150px; padding:4px 0; display:none; z-index:60; }
+  .menu.show { display:block; }
+  .menu-item { padding:8px 16px; font-size:12px; color:#333; cursor:pointer; display:flex; gap:8px; align-items:center; }
+  .menu-item:hover { background:var(--blue-bg); color:var(--blue); }
+  .menu-item .mi-ico { color:var(--blue); display:flex; }
+
+  .workspace { flex:1; display:flex; min-height:0; }
+
+  /* 大纲 */
+  .outline { width:172px; flex:none; background:#fff; border:1px solid var(--border-2); border-radius:2px; margin:0 8px 10px 14px; display:flex; flex-direction:column; overflow:hidden; }
+  .outline-h { padding:10px 12px; display:flex; align-items:center; font-size:14px; font-weight:700; border-bottom:1px solid var(--border-2); }
+  .outline-h .x { margin-left:auto; color:var(--text-3); cursor:pointer; font-size:12px; padding:2px 4px; }
+  .outline-h .x:hover { color:#333; }
+  .outline-b { padding:10px 12px; overflow:auto; }
+  .ol-item { color:var(--text-3); font-size:12px; padding:5px 0; cursor:pointer; }
+  .ol-item:hover { color:var(--blue); }
+  .ol-item.lv2 { padding-left:12px; color:#666; }
+
+  /* 编辑器 */
+  .editor { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .ribbon-tabs { background:#fff; display:flex; justify-content:center; gap:6px; border-bottom:1px solid var(--border-2); flex:none; }
+  .rt { padding:8px 16px; font-size:13px; color:#555; cursor:pointer; border-bottom:2px solid transparent; }
+  .rt:hover { color:var(--blue); }
+  .rt.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:600; }
+  .ribbon { background:#fff; border-bottom:1px solid var(--border-2); padding:6px 14px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; flex:none; }
+  .rbtn { min-width:26px; height:26px; border:none; background:transparent; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; color:#444; cursor:pointer; font-size:13px; padding:0 5px; }
+  .rbtn:hover { background:#f0f2f5; }
+  .rbtn.b { font-weight:700; }
+  .rbtn.i { font-style:italic; font-family:Georgia,serif; }
+  .rbtn.u { text-decoration:underline; }
+  .rsep { width:1px; height:18px; background:var(--border-2); margin:0 5px; flex:none; }
+  .rsel { height:26px; border:1px solid var(--border); border-radius:3px; font-size:12px; color:#333; padding:0 6px; background:#fff; outline:none; cursor:pointer; }
+  .fontA { position:relative; }
+  .fontA .bar { position:absolute; left:4px; right:4px; bottom:3px; height:3px; border-radius:1px; }
+  .canvas { flex:1; overflow:auto; background:#e8eaed; padding:26px 0 50px; display:flex; justify-content:center; }
+  .sheet { background:#fff; width:640px; min-height:800px; padding:72px 74px; box-shadow:0 1px 8px rgba(31,35,41,.16); font-size:13.5px; line-height:2.1; color:#222; outline:none; flex:none; transform-origin:top center; }
+  .sheet h1 { text-align:center; font-size:21px; letter-spacing:8px; margin:0 0 34px; font-weight:700; }
+  .sheet p { margin:0 0 4px; }
+  .sheet .gap { height:16px; }
+
+  /* 右侧单据面板 */
+  .formpanel { width:336px; flex:none; background:#fff; border:1px solid var(--border-2); border-radius:2px; margin:0 14px 10px 8px; display:flex; flex-direction:column; overflow:hidden; }
+  .fp-tabs { display:flex; gap:20px; padding:0 16px; border-bottom:1px solid var(--border-2); flex:none; }
+  .fpt { padding:10px 2px; color:#555; cursor:pointer; border-bottom:2px solid transparent; }
+  .fpt:hover { color:var(--blue); }
+  .fpt.active { color:var(--blue); border-bottom-color:var(--blue); font-weight:600; }
+  .fp-body { flex:1; overflow:auto; padding:16px 16px 24px; }
+  .fgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px 18px; }
+  .field label { display:block; font-size:12px; color:var(--text-2); margin-bottom:7px; }
+  .req { color:var(--red); font-style:normal; }
+  .inp { height:24px; border:none; border-bottom:1px solid var(--border); font-size:12px; color:#333; width:100%; background:transparent; outline:none; }
+  .inp:focus { border-bottom-color:var(--blue); }
+  .inp-wrap { position:relative; }
+  .inp-wrap .s-ico { position:absolute; right:2px; top:5px; color:var(--text-3); cursor:pointer; }
+  .inpsel { height:24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#333; cursor:pointer; }
+  .inpsel .caret-g { width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid #b0b6bf; }
+  .section-h { margin:20px 0 14px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  .section-h .caret-g { width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid #666; }
+  .fp-empty { color:var(--text-3); text-align:center; padding:60px 0; font-size:12px; }
+
+  /* 状态栏 */
+  .statusbar { height:30px; background:#fafbfc; border-top:1px solid var(--border-2); display:flex; align-items:center; gap:16px; padding:0 12px; font-size:12px; color:#666; flex:none; }
+  .sb-ico { color:#666; cursor:pointer; display:flex; }
+  .sb-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .zoom-btn { width:20px; height:20px; border:none; background:transparent; color:#666; cursor:pointer; font-size:14px; border-radius:3px; }
+  .zoom-btn:hover { background:#eef0f3; color:var(--blue); }
+
+  /* ============ 弹窗通用 ============ */
+  .overlay { position:fixed; inset:0; background:rgba(20,24,30,.45); display:none; align-items:center; justify-content:center; z-index:100; }
+  .overlay.show { display:flex; }
+  .m-head { height:48px; display:flex; align-items:center; padding:0 20px; border-bottom:1px solid var(--border-2); font-size:15px; font-weight:700; flex:none; background:#fff; }
+  .m-close { margin-left:auto; cursor:pointer; color:var(--text-3); font-size:15px; padding:4px 6px; line-height:1; }
+  .m-close:hover { color:#333; }
+  .btn { height:30px; padding:0 18px; border-radius:3px; font-size:13px; cursor:pointer; border:1px solid var(--border); background:#fff; color:#333; }
+  .btn:hover { border-color:var(--blue); color:var(--blue); }
+  .btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .btn.primary:hover { background:var(--blue-hover); }
+  .btn.primary:disabled { background:#c3d4f9; border-color:#c3d4f9; color:#fff; cursor:not-allowed; }
+  .link { color:var(--blue); font-size:12px; cursor:pointer; }
+  .link:hover { text-decoration:underline; }
+
+  /* ============ P2 智能比对 ============ */
+  #cmpOverlay { padding:26px 38px; align-items:stretch; justify-content:stretch; }
+  .cmp { flex:1; background:#fff; box-shadow:0 10px 34px rgba(0,0,0,.22); display:flex; flex-direction:column; border-radius:2px; overflow:hidden; }
+  .cmp-body { flex:1; display:flex; min-height:0; }
+  .cmp-tabs { width:100px; border-right:1px solid var(--border-2); padding-top:10px; flex:none; }
+  .cmpt { padding:11px 14px; font-size:13px; color:#555; cursor:pointer; border-left:2px solid transparent; }
+  .cmpt:hover { color:var(--blue); }
+  .cmpt.active { color:var(--blue); border-left-color:var(--blue); background:#f5f8ff; }
+  .cmpt.hidden { display:none; }
+  .cmp-content { flex:1; overflow:auto; padding:22px 44px 34px; }
+  .seg-wrap { display:flex; justify-content:center; margin:4px 0 30px; }
+  .seg { display:inline-flex; background:#f2f3f5; border:1px solid var(--border-2); border-radius:2px; }
+  .segb { width:152px; height:33px; border:none; background:transparent; font-size:13px; color:#555; cursor:pointer; }
+  .segb.active { background:#fff; border:1px solid var(--border); color:#333; }
+  .sec-title { font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:baseline; gap:10px; }
+  .sec-hint { font-size:12px; color:var(--text-3); font-weight:400; }
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-bottom:30px; }
+  .card { height:76px; background:var(--card); border:1px solid transparent; border-radius:4px; display:flex; align-items:center; gap:15px; padding:0 20px; cursor:pointer; }
+  .card:hover { background:#f0f4ff; border-color:#bcd0fb; }
+  .card .lbl { font-size:14px; }
+  .card .chev { margin-left:auto; color:#b0b6bf; font-size:20px; font-family:Arial; }
+  .picked { height:76px; background:#f0f5ff; border:1px solid #9dbcf9; border-radius:4px; display:flex; align-items:center; gap:15px; padding:0 20px; margin-bottom:30px; }
+  .picked .meta { min-width:0; }
+  .picked .lbl { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw; }
+  .picked .src { font-size:12px; color:var(--text-3); margin-top:3px; display:flex; gap:8px; align-items:center; }
+  .tag2 { font-size:11px; color:var(--blue); background:#fff; border:1px solid #b9d0ff; border-radius:2px; padding:0 6px; line-height:16px; }
+  .picked .clear { margin-left:auto; color:var(--text-3); cursor:pointer; font-size:15px; padding:4px 6px; flex:none; }
+  .picked .clear:hover { color:var(--red); }
+  .confirm-btn { width:100%; height:42px; border:none; border-radius:4px; background:var(--blue-disabled); color:#fff; font-size:14px; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .confirm-btn.on { background:var(--blue); cursor:pointer; }
+  .confirm-btn.on:hover { background:var(--blue-hover); }
+
+  /* 比对结果 */
+  .res-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:24px; }
+  .stat { background:var(--card); border-radius:4px; padding:18px; text-align:center; }
+  .stat .v { font-size:24px; font-weight:700; color:var(--blue); }
+  .stat .k { font-size:12px; color:var(--text-3); margin-top:6px; }
+  .diff { border:1px solid var(--border-2); border-radius:4px; margin-bottom:14px; overflow:hidden; }
+  .diff-h { padding:9px 14px; background:#fafbfc; font-size:13px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border-2); }
+  .diff-tag { font-size:11px; padding:1px 8px; border-radius:2px; }
+  .diff-tag.mod { background:#ffece8; color:#d4380d; }
+  .diff-tag.add { background:#e8f8ee; color:#00874a; }
+  .diff-b { padding:12px 16px; font-size:13px; color:#444; line-height:2; }
+  .diff-b .rowlab { color:var(--text-3); font-size:12px; margin-right:8px; }
+  .del { background:#ffece8; color:#d4380d; text-decoration:line-through; padding:0 2px; }
+  .ins { background:#e8f8ee; color:#00874a; padding:0 2px; }
+
+  /* ============ P3 附件选择 ============ */
+  .small-modal { width:680px; max-width:94vw; background:#fff; border-radius:4px; box-shadow:0 10px 34px rgba(0,0,0,.28); display:flex; flex-direction:column; max-height:82vh; }
+  .small-modal .m-head { border-bottom:none; padding:0 22px; height:46px; }
+  .sm-body { padding:0 22px; overflow:auto; }
+  .count { font-size:12px; color:#666; margin:2px 0 12px; }
+  .banner { display:flex; align-items:center; gap:8px; background:var(--blue-bg); border:1px solid #bcd4ff; color:var(--blue); font-size:12px; border-radius:3px; padding:7px 12px; margin-bottom:12px; }
+  .banner .back { margin-left:auto; cursor:pointer; text-decoration:underline; flex:none; }
+  .banner.hidden { display:none; }
+  table.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+  .tbl th { background:var(--thead); color:var(--text-2); font-weight:600; text-align:left; padding:10px 12px; border-bottom:1px solid var(--border-2); font-size:12px; white-space:nowrap; }
+  .tbl td { padding:12px; border-bottom:1px solid var(--border-2); color:#333; }
+  .tbl tbody tr { cursor:pointer; }
+  .tbl tbody tr:hover td { background:#f7f9fc; }
+  .tbl tbody tr.sel td { background:#f0f5ff; }
+  input[type="radio"].r { appearance:none; -webkit-appearance:none; width:15px; height:15px; border:1px solid #c9cdd4; border-radius:50%; cursor:pointer; position:relative; vertical-align:middle; background:#fff; flex:none; }
+  .r:checked { border-color:var(--blue); }
+  .r:checked::after { content:''; position:absolute; inset:3px; background:var(--blue); border-radius:50%; }
+  .check { color:var(--green); font-weight:700; }
+  .cat-tabs { display:flex; gap:6px; margin:2px 0 12px; }
+  .cat-tab { height:30px; padding:0 16px; font-size:12px; border:1px solid var(--border); background:#fff; color:#333; cursor:pointer; border-radius:2px; }
+  .cat-tab:hover { color:var(--blue); border-color:var(--blue); }
+  .cat-tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .cat-tab.active:hover { color:#fff; }
+  .m-foot { display:flex; align-items:center; padding:14px 22px 18px; gap:10px; flex:none; }
+  .m-foot .sp { flex:1; }
+  .m-foot.center { justify-content:center; }
+
+  /* ============ P4 合同选择 ============ */
+  .mid-modal { width:820px; max-width:94vw; background:#fff; border-radius:4px; box-shadow:0 10px 34px rgba(0,0,0,.28); display:flex; flex-direction:column; max-height:84vh; }
+  .m-search { position:relative; margin-left:10px; }
+  .m-search input { width:236px; height:28px; border:1px solid var(--border); border-radius:3px; padding:0 10px 0 28px; font-size:12px; outline:none; color:#333; }
+  .m-search input:focus { border-color:var(--blue); }
+  .m-search .s-ico { position:absolute; left:8px; top:7px; color:var(--text-3); }
+  .mm-body { padding:6px 22px 0; overflow:auto; }
+  .pager { display:flex; justify-content:flex-end; align-items:center; gap:6px; font-size:12px; color:#666; margin:8px 0 10px; }
+  .pg-btn { width:22px; height:22px; border:1px solid var(--border); background:#fff; border-radius:3px; color:#666; cursor:pointer; font-size:12px; line-height:1; }
+  .pg-sel { height:22px; border:1px solid var(--border); border-radius:3px; font-size:12px; color:#333; background:#fff; outline:none; }
+  .no-data { text-align:center; color:var(--text-3); padding:34px 0; font-size:12px; }
+
+  /* 表头筛选漏斗 */
+  .th-inner { display:inline-flex; align-items:center; gap:5px; }
+  .funnel { border:none; background:transparent; padding:1px; cursor:pointer; color:#b0b6bf; display:inline-flex; }
+  .funnel:hover { color:var(--blue); }
+  .funnel.active { color:var(--blue); }
+  .filter-pop { position:fixed; z-index:400; background:#fff; border:1px solid var(--border-2); box-shadow:0 4px 14px rgba(31,35,41,.16); border-radius:4px; width:176px; }
+  .fp-list { max-height:208px; overflow:auto; padding:6px 0; }
+  .fp-item { display:flex; align-items:center; gap:8px; padding:6px 12px; font-size:12px; color:#333; cursor:pointer; }
+  .fp-item:hover { background:#f5f7fa; }
+  .fp-item input { accent-color:var(--blue); width:14px; height:14px; cursor:pointer; flex:none; }
+  .fp-item span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fp-foot { display:flex; align-items:center; padding:7px 12px; border-top:1px solid var(--border-2); }
+  .fp-foot .sp { flex:1; }
+
+  /* toast */
+  #toast { position:fixed; top:58px; left:50%; transform:translateX(-50%); background:rgba(30,34,40,.92); color:#fff; font-size:13px; padding:9px 20px; border-radius:4px; z-index:999; display:none; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+</style>
+</head>
+<body>
+
+<!-- ===================== 主页面 ===================== -->
+<header class="topnav">
+  <div class="logo">
+    <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="4" cy="4" r="2.4" fill="#3d6dfc"/><circle cx="11" cy="4" r="2.4" fill="#7aa5ff"/><circle cx="4" cy="11" r="2.4" fill="#7aa5ff"/><circle cx="11" cy="11" r="2.4" fill="#3d6dfc"/></svg>
+    金蝶AI星瀚
+  </div>
+  <div class="nav-item">首页</div>
+  <div class="nav-item">应用</div>
+  <div class="nav-item">星瀚超级智能体</div>
+  <div class="nav-item">灵基</div>
+  <div class="nav-sep"></div>
+  <div class="nav-item">寻源管理</div>
+  <div class="nav-item">应收</div>
+  <div class="nav-item">单据转换管理</div>
+  <div class="nav-item">基础设置</div>
+  <div class="nav-item active">合同起草</div>
+  <div class="nav-right">
+    <span class="nav-ico"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></span>
+    <span class="nav-ico"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 6a5 5 0 0110 0v3l1.5 2.5h-13L3 9V6z"/><path d="M6.5 13.5a1.6 1.6 0 003 0"/></svg></span>
+    <span class="nav-ico"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6h8l1 8H3l1-8z"/><path d="M6 6a2 2 0 014 0"/></svg></span>
+    <button class="btn-ghost-blue">产品共创</button>
+    <div class="avatar">邓</div>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="rail">
+    <span class="rail-ico"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="14" height="10" rx="1.5"/><path d="M7 16h4M9 13v3"/></svg></span>
+    <span class="rail-ico"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="2.5" width="12" height="13" rx="1.5"/><path d="M6 6h6M6 9h6M6 12h4"/></svg></span>
+    <div class="sp"></div>
+    <span class="rail-ico"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h12M3 9h12M3 13h12"/></svg></span>
+  </aside>
+
+  <div class="main">
+    <div class="tabbar">
+      <span class="crumb">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 7L8 2.5 13.5 7"/><path d="M4 6.5V13h8V6.5"/></svg>
+        通用合同列表
+      </span>
+      <span class="tab-active">通用合同</span>
+    </div>
+
+    <div class="page-head">
+      <span class="doc-title">通用合同</span>
+      <span class="tag">处理中</span>
+    </div>
+
+    <div class="action-bar">
+      <button class="abtn" data-toast="已删除（原型演示）">删除</button>
+      <button class="abtn" data-toast="保存成功（原型演示）">保存</button>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuBiz">业务操作 <span class="caret"></span></button>
+        <div class="menu" id="menuBiz">
+          <div class="menu-item" data-toast="原型演示：变更">合同变更</div>
+          <div class="menu-item" data-toast="原型演示：作废">合同作废</div>
+        </div>
+      </div>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuAi">智能操作 <span class="caret"></span></button>
+        <div class="menu" id="menuAi">
+          <div class="menu-item" id="miCompare">
+            <span class="mi-ico"><svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0l1.6 4.2L13 5.5 9.6 8.2 10.8 13 7 10.3 3.2 13l1.2-4.8L1 5.5l4.4-1.3z"/></svg></span>
+            智能比对
+          </div>
+          <div class="menu-item" data-toast="原型演示：智能审查">智能审查</div>
+          <div class="menu-item" data-toast="原型演示：智能摘要">智能摘要</div>
+        </div>
+      </div>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuSubmit">提交 <span class="caret"></span></button>
+        <div class="menu" id="menuSubmit">
+          <div class="menu-item" data-toast="原型演示：提交并生效">提交并生效</div>
+          <div class="menu-item" data-toast="原型演示：仅提交">仅提交</div>
+        </div>
+      </div>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuQuery">业务查询 <span class="caret"></span></button>
+        <div class="menu" id="menuQuery">
+          <div class="menu-item" data-toast="原型演示：审批记录">审批记录</div>
+        </div>
+      </div>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuLink">联查单据 <span class="caret"></span></button>
+        <div class="menu" id="menuLink">
+          <div class="menu-item" data-toast="原型演示：联查">上下游单据</div>
+        </div>
+      </div>
+      <button class="abtn" data-toast="刷新完成（原型演示）">刷新</button>
+      <button class="abtn" data-toast="原型演示：退出">退出</button>
+      <div class="dd-wrap">
+        <button class="abtn" data-dd="menuOther">其他AI助手 <span class="caret"></span></button>
+        <div class="menu" id="menuOther">
+          <div class="menu-item" data-toast="原型演示：AI助手">合同AI助手</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace">
+      <aside class="outline" id="outlinePanel">
+        <div class="outline-h">大纲 <span class="x" id="outlineClose">✕</span></div>
+        <div class="outline-b">
+          <div class="ol-item">标题无内容</div>
+          <div class="ol-item lv2">履约信息：</div>
+          <div class="ol-item">标题无内容</div>
+        </div>
+      </aside>
+
+      <section class="editor">
+        <div class="ribbon-tabs">
+          <div class="rt active">开始</div><div class="rt">插入</div><div class="rt">审阅</div>
+          <div class="rt">视图</div><div class="rt">页面</div><div class="rt">效率</div>
+        </div>
+        <div class="ribbon">
+          <button class="rbtn" title="撤销">↶</button>
+          <button class="rbtn" title="重做">↷</button>
+          <span class="rsep"></span>
+          <select class="rsel"><option>宋体</option><option>黑体</option><option>楷体</option></select>
+          <select class="rsel"><option>小二</option><option>三号</option><option>四号</option><option>小四</option></select>
+          <span class="rsep"></span>
+          <button class="rbtn b">B</button>
+          <button class="rbtn i">I</button>
+          <button class="rbtn u">U</button>
+          <button class="rbtn fontA" title="字体颜色">A<span class="bar" style="background:#f54a45"></span></button>
+          <button class="rbtn fontA" title="高亮">A<span class="bar" style="background:#ffd666"></span></button>
+          <span class="rsep"></span>
+          <button class="rbtn" title="左对齐"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M2 6.5h8M2 9.5h12M2 12.5h8"/></svg></button>
+          <button class="rbtn" title="居中"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M4 6.5h8M2 9.5h12M4 12.5h8"/></svg></button>
+          <button class="rbtn" title="右对齐"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M6 6.5h8M2 9.5h12M6 12.5h8"/></svg></button>
+          <button class="rbtn" title="两端对齐"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M2 6.5h12M2 9.5h12M2 12.5h12"/></svg></button>
+          <span class="rsep"></span>
+          <button class="rbtn" title="项目符号"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><circle cx="3" cy="4" r="1" fill="#444" stroke="none"/><circle cx="3" cy="8" r="1" fill="#444" stroke="none"/><circle cx="3" cy="12" r="1" fill="#444" stroke="none"/><path d="M6 4h8M6 8h8M6 12h8"/></svg></button>
+          <button class="rbtn" title="编号"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M6 4h8M6 8h8M6 12h8"/><text x="1" y="6" font-size="5.5" fill="#444" stroke="none">1</text><text x="1" y="10" font-size="5.5" fill="#444" stroke="none">2</text><text x="1" y="14" font-size="5.5" fill="#444" stroke="none">3</text></svg></button>
+          <span class="rsep"></span>
+          <button class="rbtn" title="减少缩进"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M6 6.5h8M6 9.5h8M2 12.5h12"/><path d="M4 6.5L2 8l2 1.5" fill="none"/></svg></button>
+          <button class="rbtn" title="增加缩进"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.4"><path d="M2 3.5h12M6 6.5h8M6 9.5h8M2 12.5h12"/><path d="M2 6.5L4 8l-2 1.5" fill="none"/></svg></button>
+          <span class="rsep"></span>
+          <button class="rbtn" title="表格"><svg width="15" height="15" viewBox="0 0 16 16" stroke="#444" stroke-width="1.2"><rect x="2" y="3" width="12" height="10"/><path d="M2 6.3h12M2 9.6h12M6 3v10M10 3v10"/></svg></button>
+        </div>
+        <div class="canvas">
+          <div class="sheet" id="sheet" contenteditable="true" spellcheck="false">
+            <h1>EPC 工程类</h1>
+            <p>甲方：某某股份有限公司（以下简称甲方）</p>
+            <p>地址：北京市海淀区</p>
+            <p>甲方联系人： 李四</p>
+            <p>联系电话： 18123213131</p>
+            <div class="gap"></div>
+            <p>乙方： 金蝶软件（中国）有限公司（以下简称乙方）</p>
+            <p>地址： 广东省深圳市南山区</p>
+            <p>乙方联系人：邓小李</p>
+            <p>联系电话： 1371231234</p>
+            <div class="gap"></div>
+            <p>第一条 工程范围：本合同工程包括但不限于设计、采购、施工及试运行阶段的全部工作内容。</p>
+            <p>第二条 合同金额：本合同签约金额为人民币（大写）壹佰贰拾万元整（¥1,200,000.00）。</p>
+            <p>第三条 付款方式：甲方应于合同生效后 10 个工作日内支付合同总额的 30% 作为预付款。</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="formpanel">
+        <div class="fp-tabs">
+          <div class="fpt active" data-fp="fp1">合同信息</div>
+          <div class="fpt" data-fp="fp2">合同问答</div>
+          <div class="fpt" data-fp="fp3">插入条款</div>
+        </div>
+        <div class="fp-body" id="fp1">
+          <div class="fgrid">
+            <div class="field"><label>大写签约金额</label><input class="inp" value=""></div>
+            <div class="field"><label>合同期限(含补充)</label><input class="inp" value=""></div>
+            <div class="field"><label>合同不含税金额(含补充)</label><input class="inp" value=""></div>
+            <div class="field"><label>含税金额(含补充)</label><input class="inp" value=""></div>
+            <div class="field"><label>大写含税金额(含补充)</label><input class="inp" value=""></div>
+            <div class="field"><label>项目号</label>
+              <div class="inp-wrap"><input class="inp" value="">
+                <span class="s-ico"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></span>
+              </div>
+            </div>
+            <div class="field" style="grid-column:1/-1"><label>适用组织<i class="req">*</i></label><div class="inpsel" style="color:#b0b6bf">当前组织</div></div>
+            <div class="field" style="grid-column:1/-1"><label>备注</label><input class="inp" value=""></div>
+            <div class="field"><label>是否税</label><div class="inpsel"><span></span><span class="caret-g"></span></div></div>
+            <div class="field"><label>tgs测试字段更新</label><input class="inp" value=""></div>
+            <div class="field"><label>tgs单行文本测试二</label><input class="inp" value=""></div>
+            <div class="field"><label>基础资料属性同步测试</label><input class="inp" value=""></div>
+            <div class="field"><label>计量单位</label>
+              <div class="inp-wrap"><input class="inp" value="">
+                <span class="s-ico"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></span>
+              </div>
+            </div>
+            <div class="field"><label>版本单位数量</label><input class="inp" value=""></div>
+          </div>
+          <div class="section-h"><span class="caret-g"></span>主体信息</div>
+          <div class="fgrid">
+            <div class="field"><label>主体信息<i class="req">*</i></label><div class="inpsel"><span>甲方</span><span class="caret-g"></span></div></div>
+            <div class="field"><label>我方单位</label><div class="inpsel"><span></span><span class="caret-g"></span></div></div>
+            <div class="field"><label>甲方类型<i class="req">*</i></label><div class="inpsel"><span></span><span class="caret-g"></span></div></div>
+            <div class="field"><label>甲方<i class="req">*</i></label><div class="inpsel"><span></span><span class="caret-g"></span></div></div>
+          </div>
+        </div>
+        <div class="fp-body" id="fp2" style="display:none"><div class="fp-empty">暂无问答记录（原型演示）</div></div>
+        <div class="fp-body" id="fp3" style="display:none"><div class="fp-empty">暂无可用条款（原型演示）</div></div>
+      </aside>
+    </div>
+
+    <footer class="statusbar">
+      <span class="sb-ico"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 4h10M3 8h10M3 12h10"/></svg></span>
+      <span class="sb-ico"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="2.5" width="10" height="11" rx="1"/><path d="M6 2.5v11"/></svg></span>
+      <span>页面：1/10</span><span>节：1/1</span><span>行：1</span><span>列：1</span><span id="wordCount">字数：4020</span>
+      <div class="sb-right">
+        <span class="sb-ico"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c2 2 2 9 0 11-2-2-2-9 0-11z"/></svg></span>
+        <button class="zoom-btn" id="zoomOut">−</button>
+        <span id="zoomLabel">100%</span>
+        <button class="zoom-btn" id="zoomIn">＋</button>
+        <span class="sb-ico"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="10" height="10" rx="1"/><path d="M6 6h4v4H6z"/></svg></span>
+        <span class="sb-ico"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ===================== P2 智能比对 ===================== -->
+<div class="overlay" id="cmpOverlay">
+  <div class="cmp">
+    <div class="m-head">智能比对 <span class="m-close" id="cmpClose">✕</span></div>
+    <div class="cmp-body">
+      <div class="cmp-tabs">
+        <div class="cmpt active" id="tabFile">文件选择</div>
+        <div class="cmpt hidden" id="tabResult">比对结果</div>
+      </div>
+      <div class="cmp-content" id="cmpContentFile">
+        <div class="seg-wrap">
+          <div class="seg">
+            <button class="segb active" data-seg="full">全文比对</button>
+            <button class="segb" data-seg="doc">单据比对</button>
+          </div>
+        </div>
+
+        <div class="sec-title">原文档 <span class="sec-hint">可传1个，支持pdf、doc、docx格式（单个不超过50M）</span></div>
+        <div id="slot-original"></div>
+
+        <div class="sec-title">比对文档 <span class="sec-hint">可传1个，支持doc、docx、pdf格式（单个不超过50M）</span></div>
+        <div id="slot-compare"></div>
+
+        <button class="confirm-btn" id="btnCompare" disabled>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0l1.6 4.2L13 5.5 9.6 8.2 10.8 13 7 10.3 3.2 13l1.2-4.8L1 5.5l4.4-1.3z"/></svg>
+          <span id="btnCompareText">确认比对</span>
+        </button>
+      </div>
+
+      <div class="cmp-content" id="cmpContentResult" style="display:none">
+        <div class="res-stats">
+          <div class="stat"><div class="v">86.4%</div><div class="k">整体相似度</div></div>
+          <div class="stat"><div class="v">3 处</div><div class="k">差异条款</div></div>
+          <div class="stat"><div class="v">2.1s</div><div class="k">比对耗时</div></div>
+        </div>
+        <div class="diff">
+          <div class="diff-h"><span class="diff-tag mod">修改</span>第三条 付款方式</div>
+          <div class="diff-b">
+            <div><span class="rowlab">原文档：</span>甲方应于合同生效后 <span class="del">10</span> 个工作日内支付合同总额的 <span class="del">30%</span> 作为预付款。</div>
+            <div><span class="rowlab">比对文档：</span>甲方应于合同生效后 <span class="ins">15</span> 个工作日内支付合同总额的 <span class="ins">20%</span> 作为预付款。</div>
+          </div>
+        </div>
+        <div class="diff">
+          <div class="diff-h"><span class="diff-tag mod">修改</span>第二条 合同金额</div>
+          <div class="diff-b">
+            <div><span class="rowlab">原文档：</span>本合同签约金额为人民币（大写）<span class="del">壹佰贰拾万元整</span>。</div>
+            <div><span class="rowlab">比对文档：</span>本合同签约金额为人民币（大写）<span class="ins">壹佰叁拾伍万元整</span>。</div>
+          </div>
+        </div>
+        <div class="diff">
+          <div class="diff-h"><span class="diff-tag add">新增</span>第五条 违约责任</div>
+          <div class="diff-b">
+            <div><span class="rowlab">原文档：</span>（无此条款）</div>
+            <div><span class="rowlab">比对文档：</span><span class="ins">任何一方违约的，应向守约方支付合同总额 5% 的违约金。</span></div>
+          </div>
+        </div>
+        <div style="margin-top:18px"><button class="btn" id="backToFile">返回文件选择</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== P3 单据附件选择 ===================== -->
+<div class="overlay" id="attachOverlay" style="z-index:200">
+  <div class="small-modal">
+    <div class="m-head"><span id="attachTitle">原文档</span> <span class="m-close" id="attachClose">✕</span></div>
+    <div class="sm-body">
+      <div class="cat-tabs" id="attachCatTabs">
+        <button class="cat-tab active" data-cat="contract">合同附件</button>
+        <button class="cat-tab" data-cat="template">范本附件</button>
+      </div>
+      <div class="count" id="attachCount">共1个</div>
+      <div class="banner hidden" id="attachBanner">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.2v4M8 4.8v.4"/></svg>
+        <span id="attachBannerText"></span>
+        <span class="back" id="attachBack">返回当前合同附件</span>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:44px"></th>
+            <th>附件名称</th>
+            <th style="width:110px">附件类型</th>
+            <th style="width:96px">是否主合同</th>
+            <th style="width:130px">上传人</th>
+          </tr>
+        </thead>
+        <tbody id="attachTbody"></tbody>
+      </table>
+      <div class="no-data" id="attachEmpty" style="display:none">该分类下暂无附件</div>
+    </div>
+    <div class="m-foot">
+      <span class="link" id="linkOtherAttach">选择其他单据附件</span>
+      <span class="sp"></span>
+      <button class="btn" id="attachCancel">取 消</button>
+      <button class="btn primary" id="attachOk" disabled>确 定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== P4 通用合同选择 ===================== -->
+<div class="overlay" id="contractOverlay" style="z-index:300">
+  <div class="mid-modal">
+    <div class="m-head">
+      通用合同
+      <span class="m-close" id="contractClose">✕</span>
+    </div>
+    <div class="mm-body">
+      <div class="pager">
+        <button class="pg-btn">‹</button>
+        <select class="pg-sel"><option>1000条/页</option><option>500条/页</option></select>
+        <button class="pg-btn">›</button>
+        <div class="m-search">
+          <span class="s-ico"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></span>
+          <input id="contractSearch" placeholder="搜索合同编码/合同名称">
+        </div>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th style="width:40px">#</th>
+            <th style="width:120px"><span class="th-inner">合同编码<button class="funnel" data-col="code" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+            <th><span class="th-inner">合同名称<button class="funnel" data-col="name" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+            <th style="width:150px"><span class="th-inner">客户名称<button class="funnel" data-col="customer" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+            <th style="width:96px"><span class="th-inner">签订日期<button class="funnel" data-col="date" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+            <th style="width:76px"><span class="th-inner">合同状态<button class="funnel" data-col="status" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+            <th style="width:76px"><span class="th-inner">数据状态<button class="funnel" data-col="dataStatus" title="筛选"><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12l-4.6 5.2v4.2l-2.8 1.6V8.2L2 3z"/></svg></button></span></th>
+          </tr>
+        </thead>
+        <tbody id="contractTbody"></tbody>
+      </table>
+      <div class="no-data" id="contractEmpty" style="display:none">暂无匹配数据</div>
+    </div>
+    <div class="m-foot center">
+      <button class="btn" id="contractCancel">取消</button>
+      <button class="btn primary" id="contractOk" disabled>确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="filter-pop" id="filterPop" style="display:none">
+  <div class="fp-list" id="filterPopList"></div>
+  <div class="fp-foot">
+    <span class="link" id="filterPopClear">清 空</span>
+    <span class="sp"></span>
+    <span class="link" id="filterPopClose">关 闭</span>
+  </div>
+</div>
+
+<input type="file" id="localFile" accept=".pdf,.doc,.docx" hidden>
+<div id="toast"></div>
+
+<script>
+/* ================= 数据 ================= */
+const CURRENT_CONTRACT = {
+  id:'current', code:'HT-2026-0001', name:'工程类合同（演示）', customer:'某某股份有限公司',
+  attachments:[
+    { name:'工程类合同（演示）.docx', type:'签章附件', main:true, uploader:'17299999999', cat:'contract' },
+    { name:'EPC工程合同范本（标准版）.docx', type:'范本附件', main:false, uploader:'系统', cat:'template' }
+  ]
+};
+const OTHER_CONTRACTS = [
+  { id:'c1', code:'HT-2023-0012', name:'2023年度采购框架合同', customer:'某某股份有限公司', date:'2023-05-12', status:'已归档', dataStatus:'可用',
+    attachments:[
+      { name:'2023年度采购框架合同（双方签章）.pdf', type:'签章附件', main:true,  uploader:'17299999999', cat:'contract' },
+      { name:'框架价格清单（盖章扫描）.pdf',         type:'普通附件', main:false, uploader:'17299999999', cat:'contract' },
+      { name:'采购框架合同范本（2023版）.docx',      type:'范本附件', main:false, uploader:'系统', cat:'template' }
+    ]},
+  { id:'c2', code:'HT-2024-0087', name:'设备购销合同', customer:'某某股份有限公司', date:'2024-03-22', status:'已归档', dataStatus:'可用',
+    attachments:[
+      { name:'设备购销合同（盖章版）.pdf', type:'签章附件', main:true,  uploader:'13800000000', cat:'contract' },
+      { name:'技术协议.docx',             type:'普通附件', main:false, uploader:'13800000000', cat:'contract' },
+      { name:'验收标准说明.docx',         type:'普通附件', main:false, uploader:'17299999999', cat:'contract' },
+      { name:'设备购销合同范本（集团标准）.docx', type:'范本附件', main:false, uploader:'系统', cat:'template' }
+    ]},
+  { id:'c3', code:'HT-2024-0156', name:'EPC工程类合同（一期）', customer:'某某股份有限公司', date:'2024-08-01', status:'履行中', dataStatus:'可用',
+    attachments:[
+      { name:'EPC工程类合同（一期）签章版.docx', type:'签章附件', main:true,  uploader:'17299999999', cat:'contract' },
+      { name:'施工安全协议.pdf',                 type:'普通附件', main:false, uploader:'17299999999', cat:'contract' },
+      { name:'EPC工程范本（2024修订版）.docx',   type:'范本附件', main:false, uploader:'系统', cat:'template' }
+    ]},
+  { id:'c4', code:'HT-2025-0031', name:'技术服务合同', customer:'某某股份有限公司', date:'2025-02-14', status:'已归档', dataStatus:'可用',
+    attachments:[
+      { name:'技术服务合同（签章）.pdf', type:'签章附件', main:true, uploader:'13900000000', cat:'contract' }
+    ]},
+  { id:'c5', code:'HT-2025-0109', name:'补充协议（结算调整）', customer:'某某股份有限公司', date:'2025-06-30', status:'已归档', dataStatus:'可用',
+    attachments:[
+      { name:'补充协议（结算调整）盖章扫描.pdf', type:'签章附件', main:true,  uploader:'17299999999', cat:'contract' },
+      { name:'结算调整明细.docx',               type:'普通附件', main:false, uploader:'17299999999', cat:'contract' }
+    ]},
+  { id:'c6', code:'HT-2022-0007', name:'战略合作协议', customer:'某某股份有限公司', date:'2022-11-08', status:'已归档', dataStatus:'可用',
+    attachments:[
+      { name:'战略合作协议（双方盖章）.pdf', type:'签章附件', main:true, uploader:'13700000000', cat:'contract' }
+    ]}
+];
+
+/* ================= 状态 ================= */
+const state = {
+  slots: { original:null, compare:null },   // {name, kind:'attach'|'local', sourceLabel, sourceId}
+  attach: { slot:null, source:'current', sel:null },
+  contract: { sel:null, keyword:'', filters:{} }
+};
+const $ = id => document.getElementById(id);
+const getContract = id => id === 'current' ? CURRENT_CONTRACT : OTHER_CONTRACTS.find(c => c.id === id);
+
+/* ================= 通用 ================= */
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=> t.style.display='none', 1800);
+}
+document.querySelectorAll('[data-toast]').forEach(el=>{
+  el.addEventListener('click', e=>{ e.stopPropagation(); toast(el.dataset.toast); });
+});
+/* 下拉菜单 */
+document.querySelectorAll('[data-dd]').forEach(btn=>{
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const menu = $(btn.dataset.dd);
+    document.querySelectorAll('.menu.show').forEach(m=>{ if(m!==menu) m.classList.remove('show'); });
+    menu.classList.toggle('show');
+  });
+});
+document.addEventListener('click', ()=> document.querySelectorAll('.menu.show').forEach(m=>m.classList.remove('show')));
+document.querySelectorAll('.menu').forEach(m=> m.addEventListener('click', e=> e.stopPropagation()));
+
+/* 主页面杂项 */
+$('outlineClose').addEventListener('click', ()=> $('outlinePanel').style.display='none');
+document.querySelectorAll('.fpt').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.fpt').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['fp1','fp2','fp3'].forEach(id=> $(id).style.display = (id===t.dataset.fp ? '' : 'none'));
+  });
+});
+document.querySelectorAll('.rt').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.rt').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+const sheet = $('sheet');
+sheet.addEventListener('input', ()=>{
+  const n = sheet.innerText.replace(/\s/g,'').length;
+  $('wordCount').textContent = '字数：' + n;
+});
+let zoom = 100;
+function applyZoom(){ $('zoomLabel').textContent = zoom + '%'; sheet.style.zoom = zoom/100; }
+$('zoomIn').addEventListener('click', ()=>{ zoom = Math.min(150, zoom+10); applyZoom(); });
+$('zoomOut').addEventListener('click', ()=>{ zoom = Math.max(60, zoom-10); applyZoom(); });
+
+/* ================= P2 智能比对 ================= */
+$('miCompare').addEventListener('click', ()=>{
+  document.querySelectorAll('.menu.show').forEach(m=>m.classList.remove('show'));
+  switchCmpTab('file');
+  $('cmpOverlay').classList.add('show');
+});
+$('cmpClose').addEventListener('click', ()=> $('cmpOverlay').classList.remove('show'));
+document.querySelectorAll('.segb').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.segb').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+function switchCmpTab(which){
+  $('tabFile').classList.toggle('active', which==='file');
+  $('tabResult').classList.toggle('active', which==='result');
+  $('cmpContentFile').style.display   = which==='file' ? '' : 'none';
+  $('cmpContentResult').style.display = which==='result' ? '' : 'none';
+}
+$('tabFile').addEventListener('click', ()=> switchCmpTab('file'));
+$('tabResult').addEventListener('click', ()=>{ if(!$('tabResult').classList.contains('hidden')) switchCmpTab('result'); });
+$('backToFile').addEventListener('click', ()=> switchCmpTab('file'));
+
+const DOC_ICON = '<svg width="38" height="38" viewBox="0 0 40 40"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#3d6dfc"/></linearGradient></defs><rect x="7" y="4" width="24" height="30" rx="3" fill="url(#g1)"/><rect x="12" y="12" width="14" height="2.6" rx="1.3" fill="#fff"/><rect x="12" y="18" width="14" height="2.6" rx="1.3" fill="#fff"/><rect x="12" y="24" width="9" height="2.6" rx="1.3" fill="#fff"/></svg>';
+const FOLDER_ICON = '<svg width="38" height="38" viewBox="0 0 40 40"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fbcff"/><stop offset="1" stop-color="#4a86ff"/></linearGradient></defs><path d="M5 11a3 3 0 013-3h9l3 4h12a3 3 0 013 3v14a3 3 0 01-3 3H8a3 3 0 01-3-3V11z" fill="url(#g2)"/><rect x="12" y="20" width="16" height="2.6" rx="1.3" fill="#fff" opacity=".9"/></svg>';
+
+function renderSlot(slot){
+  const box = $( 'slot-' + slot );
+  const f = state.slots[slot];
+  if(!f){
+    box.innerHTML =
+      '<div class="cards">' +
+        '<div class="card" data-act="attach">' + DOC_ICON + '<span class="lbl">选择单据附件</span><span class="chev">›</span></div>' +
+        '<div class="card" data-act="local">'  + FOLDER_ICON + '<span class="lbl">选择本地文件</span><span class="chev">›</span></div>' +
+      '</div>';
+    box.querySelector('[data-act="attach"]').addEventListener('click', ()=> openAttach(slot));
+    box.querySelector('[data-act="local"]').addEventListener('click', ()=>{ pendingLocal = slot; $('localFile').click(); });
+  } else {
+    box.innerHTML =
+      '<div class="picked">' + (f.kind==='attach' ? DOC_ICON : FOLDER_ICON) +
+        '<div class="meta"><div class="lbl">' + f.name + '</div>' +
+        '<div class="src"><span class="tag2">' + (f.kind==='attach' ? '单据附件' : '本地文件') + '</span>来源：' + f.sourceLabel + '</div></div>' +
+        '<span class="clear" title="移除">✕</span>' +
+      '</div>';
+    box.querySelector('.clear').addEventListener('click', ()=>{ state.slots[slot]=null; renderSlot(slot); updateCompareBtn(); });
+  }
+}
+let pendingLocal = null;
+$('localFile').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file && pendingLocal){
+    state.slots[pendingLocal] = { name:file.name, kind:'local', sourceLabel:'本地文件', sourceId:'local' };
+    renderSlot(pendingLocal); updateCompareBtn();
+    toast('已选择本地文件：' + file.name);
+  }
+  e.target.value = '';
+});
+function updateCompareBtn(){
+  const ok = !!(state.slots.original && state.slots.compare);
+  const btn = $('btnCompare');
+  btn.disabled = !ok;
+  btn.classList.toggle('on', ok);
+}
+$('btnCompare').addEventListener('click', ()=>{
+  if($('btnCompare').disabled) return;
+  $('btnCompareText').textContent = '比对中...';
+  setTimeout(()=>{
+    $('btnCompareText').textContent = '确认比对';
+    $('tabResult').classList.remove('hidden');
+    switchCmpTab('result');
+  }, 800);
+});
+renderSlot('original'); renderSlot('compare'); updateCompareBtn();
+
+/* ================= P3 单据附件选择 ================= */
+function openAttach(slot){
+  state.attach = { slot, source:'current', sel:null, cat:'contract' };
+  renderAttach();
+  $('attachOverlay').classList.add('show');
+}
+function attachList(){
+  const src = getContract(state.attach.source);
+  return src.attachments.filter(f => (f.cat || 'contract') === state.attach.cat);
+}
+function renderAttach(){
+  const a = state.attach;
+  const src = getContract(a.source);
+  $('attachTitle').textContent = a.slot === 'original' ? '原文档' : '比对文档';
+  /* 分类tab仅当前合同展示：跨合同比对只取该合同的合同附件 */
+  const isCurrent = a.source === 'current';
+  $('attachCatTabs').style.display = isCurrent ? '' : 'none';
+  if(!isCurrent) a.cat = 'contract';
+  document.querySelectorAll('#attachCatTabs .cat-tab').forEach(t=>
+    t.classList.toggle('active', t.dataset.cat === a.cat));
+  const list = attachList();
+  $('attachCount').textContent = '共' + list.length + '个';
+  const banner = $('attachBanner');
+  if(a.source === 'current'){ banner.classList.add('hidden'); }
+  else {
+    banner.classList.remove('hidden');
+    $('attachBannerText').textContent = '附件来源：' + src.name + '（' + src.code + '）';
+  }
+  const tb = $('attachTbody');
+  tb.innerHTML = list.map((f,i)=>
+    '<tr data-i="' + i + '">' +
+      '<td><input type="radio" class="r" name="attachRadio" ' + (a.sel===i?'checked':'') + '></td>' +
+      '<td>' + f.name + '</td>' +
+      '<td>' + f.type + '</td>' +
+      '<td>' + (f.main ? '<span class="check">✓</span>' : '—') + '</td>' +
+      '<td>' + f.uploader + '</td>' +
+    '</tr>'
+  ).join('');
+  $('attachEmpty').style.display = list.length ? 'none' : '';
+  tb.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      a.sel = parseInt(tr.dataset.i, 10);
+      tb.querySelectorAll('tr').forEach(x=>x.classList.remove('sel'));
+      tr.classList.add('sel');
+      tr.querySelector('input').checked = true;
+      $('attachOk').disabled = false;
+    });
+  });
+  $('attachOk').disabled = a.sel === null;
+}
+/* 附件分类 tab 切换 */
+document.querySelectorAll('#attachCatTabs .cat-tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    if(state.attach.cat === t.dataset.cat) return;
+    state.attach.cat = t.dataset.cat;
+    state.attach.sel = null;
+    renderAttach();
+  });
+});
+$('attachClose').addEventListener('click', ()=> $('attachOverlay').classList.remove('show'));
+$('attachCancel').addEventListener('click', ()=> $('attachOverlay').classList.remove('show'));
+$('attachBack').addEventListener('click', ()=>{ state.attach.source='current'; state.attach.sel=null; state.attach.cat='contract'; renderAttach(); });
+$('attachOk').addEventListener('click', ()=>{
+  const a = state.attach;
+  if(a.sel === null) return;
+  const src = getContract(a.source);
+  const f = attachList()[a.sel];
+  if(!f) return;
+  state.slots[a.slot] = {
+    name: f.name, kind:'attach',
+    sourceLabel: a.source === 'current' ? '当前合同' : src.name,
+    sourceId: a.source
+  };
+  $('attachOverlay').classList.remove('show');
+  renderSlot(a.slot); updateCompareBtn();
+});
+
+/* 新增入口：选择其他单据附件 */
+$('linkOtherAttach').addEventListener('click', ()=>{
+  state.contract = { sel:null, keyword:'', filters:{} };
+  $('contractSearch').value = '';
+  closeFilterPop();
+  renderContracts();
+  $('contractOverlay').classList.add('show');
+});
+
+/* ================= P4 通用合同选择 ================= */
+const FILTER_COLS = ['code','name','customer','date','status','dataStatus'];
+function renderContracts(){
+  const kw = state.contract.keyword.trim().toLowerCase();
+  const flt = state.contract.filters || {};
+  const list = OTHER_CONTRACTS.filter(c => {
+    if(kw && !(c.code.toLowerCase().includes(kw) || c.name.toLowerCase().includes(kw) || c.customer.toLowerCase().includes(kw))) return false;
+    for(const col of FILTER_COLS){
+      const set = flt[col];
+      if(set && set.length && !set.includes(c[col])) return false;
+    }
+    return true;
+  });
+  const tb = $('contractTbody');
+  tb.innerHTML = list.map((c,idx)=>
+    '<tr data-id="' + c.id + '">' +
+      '<td><input type="radio" class="r" name="contractRadio" ' + (state.contract.sel===c.id?'checked':'') + '></td>' +
+      '<td>' + (idx+1) + '</td>' +
+      '<td style="color:var(--blue)">' + c.code + '</td>' +
+      '<td>' + c.name + '</td>' +
+      '<td>' + c.customer + '</td>' +
+      '<td>' + c.date + '</td>' +
+      '<td>' + c.status + '</td>' +
+      '<td>' + c.dataStatus + '</td>' +
+    '</tr>'
+  ).join('');
+  $('contractEmpty').style.display = list.length ? 'none' : '';
+  tb.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      state.contract.sel = tr.dataset.id;
+      tb.querySelectorAll('tr').forEach(x=>x.classList.remove('sel'));
+      tr.classList.add('sel');
+      tr.querySelector('input').checked = true;
+      $('contractOk').disabled = false;
+    });
+  });
+  $('contractOk').disabled = state.contract.sel === null;
+  /* 漏斗高亮：存在生效筛选时变蓝 */
+  document.querySelectorAll('.funnel').forEach(b=>{
+    const s = flt[b.dataset.col];
+    b.classList.toggle('active', !!(s && s.length));
+  });
+}
+
+/* 表头漏斗筛选 */
+let filterCol = null;
+function closeFilterPop(){ $('filterPop').style.display = 'none'; filterCol = null; }
+function openFilterPop(btn, col){
+  filterCol = col;
+  const values = [...new Set(OTHER_CONTRACTS.map(c=>c[col]))];
+  const cur = (state.contract.filters[col] || []);
+  $('filterPopList').innerHTML = values.map(v=>
+    '<label class="fp-item"><input type="checkbox" value="' + v + '" ' + (cur.includes(v)?'checked':'') + '><span>' + v + '</span></label>'
+  ).join('');
+  $('filterPopList').querySelectorAll('input').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const set = new Set(state.contract.filters[col] || []);
+      if(cb.checked) set.add(cb.value); else set.delete(cb.value);
+      state.contract.filters[col] = [...set];
+      renderContracts();
+    });
+  });
+  const pop = $('filterPop');
+  pop.style.display = 'block';
+  const r = btn.getBoundingClientRect();
+  const w = 176;
+  let left = r.left;
+  if(left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+  pop.style.left = left + 'px';
+  pop.style.top = (r.bottom + 4) + 'px';
+}
+document.querySelectorAll('.funnel').forEach(btn=>{
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const col = btn.dataset.col;
+    if($('filterPop').style.display === 'block' && filterCol === col){ closeFilterPop(); return; }
+    openFilterPop(btn, col);
+  });
+});
+$('filterPopClear').addEventListener('click', ()=>{
+  if(filterCol){ delete state.contract.filters[filterCol]; renderContracts(); openFilterPop(document.querySelector('.funnel[data-col="' + filterCol + '"]'), filterCol); }
+});
+$('filterPopClose').addEventListener('click', closeFilterPop);
+document.addEventListener('click', e=>{
+  const pop = $('filterPop');
+  if(pop.style.display === 'block' && !pop.contains(e.target) && !e.target.closest('.funnel')) closeFilterPop();
+});
+$('contractSearch').addEventListener('input', e=>{ state.contract.keyword = e.target.value; renderContracts(); });
+$('contractClose').addEventListener('click', ()=> $('contractOverlay').classList.remove('show'));
+$('contractCancel').addEventListener('click', ()=> $('contractOverlay').classList.remove('show'));
+$('contractOk').addEventListener('click', ()=>{
+  if(!state.contract.sel) return;
+  state.attach.source = state.contract.sel;
+  state.attach.sel = null;
+  state.attach.cat = 'contract';
+  $('contractOverlay').classList.remove('show');
+  renderAttach();   /* 回到 P3，展示所选合同的附件 */
+  toast('已切换附件来源：' + getContract(state.contract.sel).name);
+});
+</script>
+</body>
+</html>
